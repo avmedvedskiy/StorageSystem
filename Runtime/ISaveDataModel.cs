@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace SavingSystem
 { 
-    public interface ISaveUserData
+    public interface ISaveDataModel
     {
         void BeforeSerialize();
         void AfterDeserialize();

@@ -2,143 +2,98 @@
 using System.IO;
 using System.Text;
 using System;
-using System.Threading;
+using System.Threading.Tasks;
+using EncryptStringSample;
 
 namespace SavingSystem
 {
-    public class LocalStorage<T> where T: class,ISaveUserData, new()
+    public class LocalStorage<T> where T : class, ISaveDataModel, new()
     {
-        /// <summary>
-        /// User Storage
-        /// </summary>
-        public T UserData
+        public T UserData { get; private set; }
+
+        private readonly string _pp;
+        private readonly string _fileName;
+        private readonly bool _encrypt;
+        private readonly string _path;
+
+        private string FilePath => _path + "/" + _fileName;
+
+        public LocalStorage(string path, string pp, string fileName, bool encrypt)
         {
-            get
-            {
-                if (_userData == null)
-                    _userData = ReadLocalSaves();
-                return _userData;
-            }
-            private set
-            {
-                _userData = value;
-            }
+            _path = path;
+            _pp = pp;
+            _fileName = fileName;
+            _encrypt = encrypt;
         }
 
-        private const string SAVE_FILENAME = "data.json";
-        private const string PP = "rhhf3zzvlis8pmyc";
-        private const bool DONT_ENCRYPT_LOCAL_SAVES = true;
-        private string _path => Application.persistentDataPath;
-        private T _userData;
-
-        protected virtual void OnBeforeSerialize()
+        public void WriteSave()
         {
-
-        }
-
-        protected virtual void OnAfterDeserialize()
-        {
-
-        }
-
-        public void SaveLocalSaves()
-        {
-            OnBeforeSerialize();
+            if (UserData == null)
+                return;
             UserData.BeforeSerialize();
-            Thread thread = new Thread(WriteLocalSaves);
-            thread.Start();
+            Task.Run(WriteOnDisk);
         }
 
-        public void SaveLocalSavesImmediately()
+        public void WriteSaveImmediately()
         {
-            OnBeforeSerialize();
+            if (UserData == null)
+                return;
             UserData.BeforeSerialize();
-            WriteLocalSaves();
+            WriteOnDisk();
         }
 
-        private T ReadLocalSaves()
+
+        public T ReadSave(out bool isNew)
         {
-            T data = null;
+            T data;
 
-            if (File.Exists(_path + "/" + SAVE_FILENAME))
+            if (File.Exists(FilePath))
             {
-                string str = Encoding.UTF8.GetString(File.ReadAllBytes(_path + "/" + SAVE_FILENAME));
+                string str = Encoding.UTF8.GetString(File.ReadAllBytes(FilePath));
 
-#if UNITY_EDITOR
-                if (DONT_ENCRYPT_LOCAL_SAVES)
-                {
-                    try
-                    {
-                        data = JsonUtility.FromJson<T>(str);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(new Exception("Cant parce json", e));
-                    }
-
-                    if (data != null)
-                    {
-                        data.AfterDeserialize();
-                        OnAfterDeserialize();
-                        return data;
-                    }
-                }
-#endif
                 try
                 {
-                    str = EncryptStringSample.StringCipher.Decrypt(str, PP);
+                    if (_encrypt)
+                        str = StringCipher.Decrypt(str, _pp);
+
                     data = JsonUtility.FromJson<T>(str);
                     data.AfterDeserialize();
-                    OnAfterDeserialize();
+                    isNew = false;
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(new Exception("Cant decrypt saves! Create New", e));
                     data = new T();
                     data.AfterDeserialize();
-                    OnAfterDeserialize();
+                    isNew = true;
                 }
             }
             else
             {
                 data = new T();
                 data.AfterDeserialize();
-                OnAfterDeserialize();
+                isNew = true;
             }
-            
+
+            UserData = data;
             return data;
         }
-        private void WriteLocalSaves()
+
+        private void WriteOnDisk()
         {
-#if UNITY_EDITOR
-            if (DONT_ENCRYPT_LOCAL_SAVES)
-            {
-                WriteLocalSaves(Encoding.UTF8.GetBytes(JsonUtility.ToJson(UserData, true)));
-                return;
-            }
-#endif
-#pragma warning disable CS0162 // Обнаружен недостижимый код
-
-            var json = EncryptStringSample.StringCipher.Encrypt(JsonUtility.ToJson(UserData), PP);
-            WriteLocalSaves(Encoding.UTF8.GetBytes(json));
-
-#pragma warning restore CS0162 // Обнаружен недостижимый код
+            var json = _encrypt
+                ? StringCipher.Encrypt(JsonUtility.ToJson(UserData), _pp)
+                : JsonUtility.ToJson(UserData, true);
+            WriteOnDisk(Encoding.UTF8.GetBytes(json));
         }
 
-        private void WriteLocalSaves(byte[] bytes)
-        {
-            WriteLocalSaves(bytes, SAVE_FILENAME);
-        }
-
-        private void WriteLocalSaves(byte[] bytes, string fileName)
+        private void WriteOnDisk(byte[] bytes)
         {
             if (bytes.Length < 1) return;
 
-            using (FileStream fileStream = File.Create(_path + "/" + fileName))
-            {
-                fileStream.Write(bytes, 0, bytes.Length);
-                fileStream.Flush();
-            }
+            using FileStream fileStream = File.Create(FilePath);
+            fileStream.Write(bytes, 0, bytes.Length);
+            fileStream.Flush();
         }
 
         //#if UNITY_EDITOR
