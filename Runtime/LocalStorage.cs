@@ -7,7 +7,15 @@ using EncryptStringSample;
 
 namespace SavingSystem
 {
-    public class LocalStorage<T> where T : class, ISaveDataModel, new()
+    public interface ILocalStorage<out T> where T : class, ISaveDataModel, new()
+    {
+        T UserData { get; }
+        void WriteSave();
+        void WriteSaveImmediately();
+        T ReadSave(out bool isNew);
+    }
+
+    public class LocalStorage<T> : ILocalStorage<T> where T : class, ISaveDataModel, new()
     {
         public T UserData { get; private set; }
 
