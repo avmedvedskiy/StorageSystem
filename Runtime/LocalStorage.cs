@@ -7,7 +7,7 @@ using EncryptStringSample;
 
 namespace SavingSystem
 {
-    public interface ILocalStorage<out T> where T : class, ISaveDataModel, new()
+    public interface ILocalStorage<out T> where T : class, IPersistentProgress, new()
     {
         T UserData { get; }
         void WriteSave();
@@ -15,7 +15,7 @@ namespace SavingSystem
         T ReadSave(out bool isNew);
     }
 
-    public class LocalStorage<T> : ILocalStorage<T> where T : class, ISaveDataModel, new()
+    public class LocalStorage<T> : ILocalStorage<T> where T : class, IPersistentProgress, new()
     {
         public T UserData { get; private set; }
 
