@@ -64,13 +64,13 @@ namespace SavingSystem
         public static JSONSerializedElement Serialize<T>(T item)
         {
             if (item == null)
-                throw new ArgumentNullException("item", "Can not serialize null element");
+                throw new ArgumentNullException(nameof(item), "Can not serialize null element");
 
             var typeInfo = GetTypeSerializableAsString(item.GetType());
             var data = JsonUtility.ToJson(item);
 
             if (string.IsNullOrEmpty(data))
-                throw new ArgumentException(string.Format("Can not serialize {0}", item));
+                throw new ArgumentException($"Can not serialize {item}");
             ;
 
             return new JSONSerializedElement
@@ -83,13 +83,13 @@ namespace SavingSystem
         public static T Deserialize<T>(JSONSerializedElement item, params object[] constructorArgs) where T : class
         {
             if (!item.typeInfo.IsValid() || string.IsNullOrEmpty(item.JSONnodeData))
-                throw new ArgumentException(string.Format("Can not deserialize {0}, it is invalid", item));
+                throw new ArgumentException($"Can not deserialize {item}, it is invalid");
 
             TypeSerializationInfo info = item.typeInfo;
 
             var type = GetTypeFromSerializedString(info);
             if (type == null)
-                throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", info.fullName));
+                throw new ArgumentException($"Can not deserialize ({info.fullName}), type is invalid");
 
             T instance;
             try
@@ -98,7 +98,7 @@ namespace SavingSystem
             }
             catch (Exception e)
             {
-                throw new Exception(string.Format("Could not construct instance of: {0}", type), e);
+                throw new Exception($"Could not construct instance of: {type}", e);
             }
 
             if (instance != null)
@@ -196,7 +196,6 @@ namespace SavingSystem
                     Debug.LogError(element.JSONnodeData);
                 }
             }
-            return;
         }
     }
 }
