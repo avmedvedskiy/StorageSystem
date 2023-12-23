@@ -7,6 +7,7 @@ namespace SavingSystem
         bool IsNew { get; }
         T Data { get; }
         UniTask WriteSave();
+        void WriteSaveImmediately();
         UniTask ReadSave();
     }
 }

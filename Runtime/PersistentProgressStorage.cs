@@ -32,9 +32,17 @@ namespace SavingSystem
             if (Data == null)
                 return;
             Data.BeforeSerialize();
-            await WriteOnDisk();
+            await Write(SerializeData());
         }
-        
+
+        public void WriteSaveImmediately()
+        {
+            if (Data == null)
+                return;
+            Data.BeforeSerialize();
+            WriteImmediately(SerializeData());
+        }
+
         public async UniTask ReadSave()
         {
             T data;
@@ -69,20 +77,26 @@ namespace SavingSystem
             Data = data;
         }
 
-        private async UniTask WriteOnDisk()
+        private byte[] SerializeData()
         {
             var json = _encrypt
                 ? StringCipher.Encrypt(JsonUtility.ToJson(Data), _pp)
                 : JsonUtility.ToJson(Data, true);
-            await WriteOnDisk(Encoding.UTF8.GetBytes(json));
+            
+            return Encoding.UTF8.GetBytes(json);
         }
 
-        private async UniTask WriteOnDisk(byte[] bytes)
+        private async UniTask Write(byte[] bytes)
         {
-            if (bytes.Length < 1) return;
-
             await using FileStream fileStream = File.Create(FilePath);
             await fileStream.WriteAsync(bytes, 0, bytes.Length);
+            await fileStream.FlushAsync();
+        }
+
+        private void WriteImmediately(byte[] bytes)
+        {
+            using FileStream fileStream = File.Create(FilePath);
+            fileStream.Write(bytes, 0, bytes.Length);
             fileStream.Flush();
         }
     }
