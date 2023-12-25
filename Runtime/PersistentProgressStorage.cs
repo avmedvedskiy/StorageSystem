@@ -16,6 +16,7 @@ namespace SavingSystem
         private readonly string _fileName;
         private readonly bool _encrypt;
         private readonly string _path;
+        private bool _inProcess;
 
         private string FilePath => $"{_path}/{_fileName}";
 
@@ -29,18 +30,20 @@ namespace SavingSystem
 
         public async UniTask WriteSave()
         {
-            if (Data == null)
+            if (Data == null || _inProcess)
                 return;
             Data.BeforeSerialize();
-            await Write(SerializeData());
+            _inProcess = true;
+            await WriteTextAsync(SerializeData());
+            _inProcess = false;
         }
 
         public void WriteSaveImmediately()
         {
-            if (Data == null)
+            if (Data == null || _inProcess)
                 return;
             Data.BeforeSerialize();
-            WriteImmediately(SerializeData());
+            WriteText(SerializeData());
         }
 
         public async UniTask ReadSave()
@@ -77,27 +80,21 @@ namespace SavingSystem
             Data = data;
         }
 
-        private byte[] SerializeData()
+        private string SerializeData()
         {
-            var json = _encrypt
+            return _encrypt
                 ? StringCipher.Encrypt(JsonUtility.ToJson(Data), _pp)
                 : JsonUtility.ToJson(Data, true);
-            
-            return Encoding.UTF8.GetBytes(json);
         }
 
-        private async UniTask Write(byte[] bytes)
+        private async UniTask WriteTextAsync(string value)
         {
-            await using FileStream fileStream = File.Create(FilePath);
-            await fileStream.WriteAsync(bytes, 0, bytes.Length);
-            await fileStream.FlushAsync();
+            await File.WriteAllTextAsync(FilePath, value);
         }
-
-        private void WriteImmediately(byte[] bytes)
+        
+        private void WriteText(string value)
         {
-            using FileStream fileStream = File.Create(FilePath);
-            fileStream.Write(bytes, 0, bytes.Length);
-            fileStream.Flush();
+            File.WriteAllText(FilePath, value);
         }
     }
 }
