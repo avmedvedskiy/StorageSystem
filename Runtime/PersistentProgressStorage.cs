@@ -7,10 +7,10 @@ using EncryptStringSample;
 
 namespace SavingSystem
 {
-    public class PersistentProgressStorage<T> : IPersistentProgressStorage<T> where T : class, IPersistentProgress, new()
+    public class PersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress> where TProgress : class, IPersistentProgress, new()
     {
         public bool IsNew { get; private set; }
-        public T Data { get; private set; }
+        public TProgress Data { get; private set; }
 
         private readonly string _pp;
         private readonly string _fileName;
@@ -48,7 +48,7 @@ namespace SavingSystem
 
         public async UniTask ReadSave()
         {
-            T data;
+            TProgress data;
 
             if (File.Exists(FilePath))
             {
@@ -58,21 +58,21 @@ namespace SavingSystem
                     if (_encrypt)
                         str = StringCipher.Decrypt(str, _pp);
 
-                    data = JsonUtility.FromJson<T>(str);
+                    data = JsonUtility.FromJson<TProgress>(str);
                     data.AfterDeserialize();
                     IsNew = false;
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(new Exception("Cant decrypt saves! Create New", e));
-                    data = new T();
+                    data = new TProgress();
                     data.AfterDeserialize();
                     IsNew = true;
                 }
             }
             else
             {
-                data = new T();
+                data = new TProgress();
                 data.AfterDeserialize();
                 IsNew = true;
             }
