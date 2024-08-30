@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace SavingSystem
@@ -29,13 +28,7 @@ namespace SavingSystem
             public string JSONnodeData;
         }
 
-        public static JSONSerializedElement nullElement
-        {
-            get
-            {
-                return new JSONSerializedElement();
-            }
-        }
+        public static JSONSerializedElement nullElement => new();
 
         public static TypeSerializationInfo GetTypeSerializableAsString(Type type)
         {

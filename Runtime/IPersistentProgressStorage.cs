@@ -2,12 +2,17 @@ using Cysharp.Threading.Tasks;
 
 namespace SavingSystem
 {
-    public interface IPersistentProgressStorage<T> where T : class, IPersistentProgress, new()
+    public interface IPersistentProgressStorage
     {
-        bool IsNew { get; }
-        T Data { get; }
         UniTask WriteSave();
         void WriteSaveImmediately();
         UniTask ReadSave();
+        
+    }
+    
+    public interface IPersistentProgressStorage<out T> : IPersistentProgressStorage where T : class, IPersistentProgress, new()
+    {
+        bool IsNew { get; }
+        T Data { get; }
     }
 }

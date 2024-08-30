@@ -19,7 +19,7 @@ namespace SavingSystem
 
         public UniTask ReadSave()
         {
-            return UniTask.FromResult(Data);
+            return UniTask.CompletedTask;
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Text;
 using System;
 using Cysharp.Threading.Tasks;
 using EncryptStringSample;
+using StorageSystem;
 
 namespace SavingSystem
 {
@@ -13,19 +14,17 @@ namespace SavingSystem
         public TProgress Data { get; private set; }
 
         private readonly string _pp;
-        private readonly string _fileName;
         private readonly bool _encrypt;
-        private readonly string _path;
         private bool _inProcess;
 
-        private string FilePath => $"{_path}/{_fileName}";
+        private readonly string _filePath;
 
         public PersistentProgressStorage(string path, string pp, string fileName, bool encrypt)
         {
-            _path = path;
             _pp = pp;
-            _fileName = fileName;
             _encrypt = encrypt;
+            _filePath = $"{path}/{fileName}";
+            PersistentProgressObserver.Create(this);
         }
 
         public async UniTask WriteSave()
@@ -50,9 +49,9 @@ namespace SavingSystem
         {
             TProgress data;
 
-            if (File.Exists(FilePath))
+            if (File.Exists(_filePath))
             {
-                var str = Encoding.UTF8.GetString(await File.ReadAllBytesAsync(FilePath));
+                var str = Encoding.UTF8.GetString(await File.ReadAllBytesAsync(_filePath));
                 try
                 {
                     if (_encrypt)
@@ -89,12 +88,12 @@ namespace SavingSystem
 
         private async UniTask WriteTextAsync(string value)
         {
-            await File.WriteAllTextAsync(FilePath, value);
+            await File.WriteAllTextAsync(_filePath, value);
         }
         
         private void WriteText(string value)
         {
-            File.WriteAllText(FilePath, value);
+            File.WriteAllText(_filePath, value);
         }
     }
 }
