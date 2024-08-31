@@ -12,9 +12,15 @@ namespace StorageSystem
             _storage = storage;
         }
 
-        void OnApplicationPause(bool pause)
+        private void OnApplicationPause(bool pause)
         {
             if(pause && _storage != null)
+                _storage.WriteSaveImmediately();
+        }
+        
+        private void OnApplicationQuit()
+        {
+            if(_storage != null))
                 _storage.WriteSaveImmediately();
         }
 
