@@ -20,7 +20,7 @@ namespace StorageSystem
         
         private void OnApplicationQuit()
         {
-            if(_storage != null))
+            if(_storage != null)
                 _storage.WriteSaveImmediately();
         }
 
