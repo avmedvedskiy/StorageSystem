@@ -3,7 +3,7 @@
 namespace SavingSystem
 {
     public class MockPersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress>
-        where TProgress : class, IPersistentProgress, new()
+        where TProgress : class, new()
     {
         public bool IsNew => true;
         public TProgress Data { get; } = new();

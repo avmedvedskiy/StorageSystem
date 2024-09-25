@@ -8,7 +8,7 @@ using StorageSystem;
 
 namespace SavingSystem
 {
-    public class PersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress> where TProgress : class, IPersistentProgress, new()
+    public class PersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress> where TProgress : class, new()
     {
         public bool IsNew { get; private set; }
         public TProgress Data { get; private set; }
@@ -31,7 +31,6 @@ namespace SavingSystem
         {
             if (Data == null || _inProcess)
                 return;
-            Data.BeforeSerialize();
             _inProcess = true;
             await WriteTextAsync(SerializeData());
             _inProcess = false;
@@ -41,7 +40,6 @@ namespace SavingSystem
         {
             if (Data == null || _inProcess)
                 return;
-            Data.BeforeSerialize();
             WriteText(SerializeData());
         }
 
@@ -58,21 +56,18 @@ namespace SavingSystem
                         str = StringCipher.Decrypt(str, _pp);
 
                     data = JsonUtility.FromJson<TProgress>(str);
-                    data.AfterDeserialize();
                     IsNew = false;
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(new Exception("Cant decrypt saves! Create New", e));
                     data = new TProgress();
-                    data.AfterDeserialize();
                     IsNew = true;
                 }
             }
             else
             {
                 data = new TProgress();
-                data.AfterDeserialize();
                 IsNew = true;
             }
 

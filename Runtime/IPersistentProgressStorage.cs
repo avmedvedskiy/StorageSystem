@@ -10,7 +10,7 @@ namespace SavingSystem
         
     }
     
-    public interface IPersistentProgressStorage<out T> : IPersistentProgressStorage where T : class, IPersistentProgress, new()
+    public interface IPersistentProgressStorage<out T> : IPersistentProgressStorage where T : class, new()
     {
         bool IsNew { get; }
         T Data { get; }
