@@ -1,6 +1,6 @@
 {
   "name": "com.avmedvedskiy.storagesystem",
-  "displayName": "Services.StorageSystem",
+  "displayName": "Infrastructure.StorageSystem",
   "version": "1.0.8",
   "unity": "2018.4",
   "author": "avmedvedskiy",
