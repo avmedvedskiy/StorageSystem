@@ -10,20 +10,21 @@ namespace SavingSystem
 {
     public class PersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress> where TProgress : class, new()
     {
+        private readonly IJsonSerializer _serializer;
+        private readonly PersistentStorageConfig _config;
         public bool IsNew { get; private set; }
         public TProgress Data { get; private set; }
 
-        private readonly string _pp;
-        private readonly bool _encrypt;
+        private string Pp => _config.Pp;
+        private bool Encrypt => _config.Encrypt;
+        private string FilePath => _config.FilePath;
+
         private bool _inProcess;
 
-        private readonly string _filePath;
-
-        public PersistentProgressStorage(string path, string pp, string fileName, bool encrypt)
+        public PersistentProgressStorage(IJsonSerializer serializer, PersistentStorageConfig config)
         {
-            _pp = pp;
-            _encrypt = encrypt;
-            _filePath = $"{path}/{fileName}";
+            _serializer = serializer;
+            _config = config;
             PersistentProgressObserver.Create(this);
         }
 
@@ -32,7 +33,7 @@ namespace SavingSystem
             if (Data == null || _inProcess)
                 return;
             _inProcess = true;
-            await WriteTextAsync(SerializeData());
+            await WriteTextAsync(Serialize());
             _inProcess = false;
         }
 
@@ -40,22 +41,22 @@ namespace SavingSystem
         {
             if (Data == null || _inProcess)
                 return;
-            WriteText(SerializeData());
+            WriteText(Serialize());
         }
 
         public async UniTask ReadSave()
         {
             TProgress data;
 
-            if (File.Exists(_filePath))
+            if (File.Exists(FilePath))
             {
-                var str = Encoding.UTF8.GetString(await File.ReadAllBytesAsync(_filePath));
+                var str = Encoding.UTF8.GetString(await File.ReadAllBytesAsync(FilePath));
                 try
                 {
-                    if (_encrypt)
-                        str = StringCipher.Decrypt(str, _pp);
+                    if (Encrypt)
+                        str = StringCipher.Decrypt(str, Pp);
 
-                    data = JsonUtility.FromJson<TProgress>(str);
+                    data = Deserialize(str);
                     IsNew = false;
                 }
                 catch (Exception e)
@@ -74,21 +75,28 @@ namespace SavingSystem
             Data = data;
         }
 
-        private string SerializeData()
+        private TProgress Deserialize(string str)
         {
-            return _encrypt
-                ? StringCipher.Encrypt(JsonUtility.ToJson(Data), _pp)
-                : JsonUtility.ToJson(Data, true);
+            return _serializer.Deserialize<TProgress>(str);
+            //return JsonUtility.FromJson<TProgress>(str);
+        }
+
+        private string Serialize()
+        {
+            
+            return Encrypt
+                ? StringCipher.Encrypt(_serializer.Serialize(Data), Pp)
+                : _serializer.Serialize(Data, true);
         }
 
         private async UniTask WriteTextAsync(string value)
         {
-            await File.WriteAllTextAsync(_filePath, value);
+            await File.WriteAllTextAsync(FilePath, value);
         }
         
         private void WriteText(string value)
         {
-            File.WriteAllText(_filePath, value);
+            File.WriteAllText(FilePath, value);
         }
     }
 }
