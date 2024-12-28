@@ -1,15 +1,15 @@
-﻿using UnityEngine;
-using System.IO;
-using System.Text;
-using System;
+﻿using System;
 using Cysharp.Threading.Tasks;
 using EncryptStringSample;
 using StorageSystem;
+using UnityEngine;
 
 namespace SavingSystem
 {
-    public class PersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress> where TProgress : class, new()
+    public class PlayerPrefsPersistentProgressStorage<TProgress> : IPersistentProgressStorage<TProgress>
+        where TProgress : class, new()
     {
+
         private readonly IJsonSerializer _serializer;
         private readonly PersistentStorageConfig _config;
         public bool IsNew { get; private set; }
@@ -17,11 +17,11 @@ namespace SavingSystem
 
         private string Pp => _config.Pp;
         private bool Encrypt => _config.Encrypt;
-        private string FilePath => _config.FilePath;
 
         private bool _inProcess;
+        private const string SAVE_KEY = "SAVE_KEY";
 
-        public PersistentProgressStorage(IJsonSerializer serializer, PersistentStorageConfig config)
+        public PlayerPrefsPersistentProgressStorage(IJsonSerializer serializer, PersistentStorageConfig config)
         {
             _serializer = serializer;
             _config = config;
@@ -44,13 +44,13 @@ namespace SavingSystem
             WriteText(Serialize());
         }
 
-        public async UniTask ReadSave()
+        public UniTask ReadSave()
         {
             TProgress data;
 
-            if (File.Exists(FilePath))
+            if (PlayerPrefs.HasKey(SAVE_KEY))
             {
-                var str = Encoding.UTF8.GetString(await File.ReadAllBytesAsync(FilePath));
+                var str = PlayerPrefs.GetString(SAVE_KEY);
                 try
                 {
                     if (Encrypt)
@@ -73,6 +73,7 @@ namespace SavingSystem
             }
 
             Data = data;
+            return UniTask.CompletedTask;
         }
 
         private TProgress Deserialize(string str)
@@ -81,22 +82,20 @@ namespace SavingSystem
             //return JsonUtility.FromJson<TProgress>(str);
         }
 
-        private string Serialize()
-        {
-            
-            return Encrypt
+        private string Serialize() =>
+            Encrypt
                 ? StringCipher.Encrypt(_serializer.Serialize(Data), Pp)
                 : _serializer.Serialize(Data, true);
-        }
 
-        private async UniTask WriteTextAsync(string value)
+        private UniTask WriteTextAsync(string value)
         {
-            await File.WriteAllTextAsync(FilePath, value);
+            PlayerPrefs.SetString(SAVE_KEY, value);
+            return UniTask.CompletedTask;
         }
         
         private void WriteText(string value)
         {
-            File.WriteAllText(FilePath, value);
+            PlayerPrefs.SetString(SAVE_KEY, value);
         }
     }
 }
