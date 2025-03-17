@@ -17,7 +17,7 @@ namespace SavingSystem
 
         private string Pp => _config.Pp;
         private bool Encrypt => _config.Encrypt;
-        private string FilePath => _config.FilePath;
+        private string FilePath => $"{Application.persistentDataPath}/{_config.FilePath}";
 
         private bool _inProcess;
 
