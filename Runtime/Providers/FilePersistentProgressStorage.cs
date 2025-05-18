@@ -17,7 +17,7 @@ namespace SavingSystem
 
         private string Pp => _config.Pp;
         private bool Encrypt => _config.Encrypt;
-        private string FilePath => $"{Application.persistentDataPath}/{_config.FilePath}";
+        private string FilePath { get; }
 
         private bool _inProcess;
 
@@ -25,6 +25,7 @@ namespace SavingSystem
         {
             _serializer = serializer;
             _config = config;
+            FilePath = $"{Application.persistentDataPath}/{_config.FilePath}";
             PersistentProgressObserver.Create(this);
         }
 
