@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 using System.IO;
+using UnityEngine;
 
 namespace EncryptStringSample
 {
@@ -123,8 +124,18 @@ namespace EncryptStringSample
 #if UNITY_WP8
             throw new NotSupportedException("StringCipher doesn't support current platform");
 #else
-            byte[] initVectorBytes = Encoding.ASCII.GetBytes(initVector);
-            byte[] cipherTextBytes = Convert.FromBase64String(cipherText);
+            //byte[] initVectorBytes = Encoding.ASCII.GetBytes(initVector);
+
+            byte[] cipherTextBytes;//= Convert.FromBase64String(cipherText);
+            try
+            {
+                cipherTextBytes = Convert.FromBase64String(cipherText);
+            }
+            catch (FormatException e)
+            {
+                Debug.LogWarning("Maybe we try read non decrypted string");
+                return cipherText;
+            }
 
             PasswordDeriveBytes password = new PasswordDeriveBytes(passPhrase, null);
             byte[] keyBytes = password.GetBytes(keysize / 8);

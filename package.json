@@ -1,7 +1,7 @@
 {
   "name": "com.avmedvedskiy.storagesystem",
   "displayName": "Infrastructure.StorageSystem",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "unity": "2018.4",
   "author": "avmedvedskiy",
   "description": "Save System",
