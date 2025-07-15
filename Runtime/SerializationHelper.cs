@@ -1,52 +1,37 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SavingSystem
 {
     public static class SerializationHelper
     {
         [Serializable]
-        public struct TypeSerializationInfo
+        public struct JSONSerializedElement
         {
             [SerializeField]
             public string fullName;
 
+            [SerializeField]
+            public string json;
+            
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool IsValid()
             {
-                return !string.IsNullOrEmpty(fullName);
+                return !string.IsNullOrEmpty(fullName) && !string.IsNullOrEmpty(json);
             }
-        }
-
-        [Serializable]
-        public struct JSONSerializedElement
-        {
-            [SerializeField]
-            public TypeSerializationInfo typeInfo;
-
-            [SerializeField]
-            public string JSONnodeData;
         }
 
         public static JSONSerializedElement nullElement => new();
 
-        public static TypeSerializationInfo GetTypeSerializableAsString(Type type)
+        static Type GetTypeFromSerializedString(string typeInfo)
         {
-            return new TypeSerializationInfo
-            {
-                fullName = type.FullName
-            };
-        }
-
-        static Type GetTypeFromSerializedString(TypeSerializationInfo typeInfo)
-        {
-            if (!typeInfo.IsValid())
-                return null;
-
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
-                var type = assembly.GetType(typeInfo.fullName);
+                var type = assembly.GetType(typeInfo);
                 if (type != null)
                     return type;
             }
@@ -54,52 +39,33 @@ namespace SavingSystem
             return null;
         }
 
-        public static JSONSerializedElement Serialize<T>(T item)
+        private static JSONSerializedElement Serialize<T>(T item)
         {
             if (item == null)
                 throw new ArgumentNullException(nameof(item), "Can not serialize null element");
 
-            var typeInfo = GetTypeSerializableAsString(item.GetType());
+            var typeInfo = item.GetType().FullName;
             var data = JsonUtility.ToJson(item);
-
-            if (string.IsNullOrEmpty(data))
-                throw new ArgumentException($"Can not serialize {item}");
-            ;
 
             return new JSONSerializedElement
             {
-                typeInfo = typeInfo,
-                JSONnodeData = data
+                fullName = typeInfo,
+                json = data
             };
         }
 
-        public static T Deserialize<T>(JSONSerializedElement item, params object[] constructorArgs) where T : class
+        private static T Deserialize<T>(JSONSerializedElement item, params object[] constructorArgs) where T : class
         {
-            if (!item.typeInfo.IsValid() || string.IsNullOrEmpty(item.JSONnodeData))
+            if (item.IsValid() == false)
                 throw new ArgumentException($"Can not deserialize {item}, it is invalid");
 
-            TypeSerializationInfo info = item.typeInfo;
-
-            var type = GetTypeFromSerializedString(info);
+            var type = GetTypeFromSerializedString(item.fullName);
             if (type == null)
-                throw new ArgumentException($"Can not deserialize ({info.fullName}), type is invalid");
+                throw new ArgumentException($"Can not deserialize ({item.fullName}), type is invalid");
 
-            T instance;
-            try
-            {
-                instance = Activator.CreateInstance(type, constructorArgs) as T;
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Could not construct instance of: {type}", e);
-            }
-
-            if (instance != null)
-            {
-                JsonUtility.FromJsonOverwrite(item.JSONnodeData, instance);
-                return instance;
-            }
-            return null;
+            var instance = (T)Activator.CreateInstance(type, constructorArgs);
+            JsonUtility.FromJsonOverwrite(item.json, instance);
+            return instance;
         }
 
         public static List<JSONSerializedElement> Serialize<T>(IEnumerable<T> list)
@@ -142,10 +108,7 @@ namespace SavingSystem
                     Debug.LogException(e);
                 }
             }
-            return;
         }
-
-
 
         public static List<T> Deserialize<T>(IEnumerable<JSONSerializedElement> list, params object[] constructorArgs) where T : class
         {
@@ -162,7 +125,7 @@ namespace SavingSystem
                 catch (Exception e)
                 {
                     Debug.LogException(e);
-                    Debug.LogError(element.JSONnodeData);
+                    Debug.LogError(element.json);
                 }
             }
             return result;
@@ -186,7 +149,7 @@ namespace SavingSystem
                 catch (Exception e)
                 {
                     Debug.LogException(e);
-                    Debug.LogError(element.JSONnodeData);
+                    Debug.LogError(element.json);
                 }
             }
         }
